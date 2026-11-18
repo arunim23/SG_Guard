@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Guard Deployment Status · Shadowfax</title>
+<style>
+/* ============================================================
+   Shadowfax Dashboard Theme — "Warm Cream / Teal" operational
+   dashboard look. Drop this into a single-file HTML dashboard
+   and build on the tokens + components below.
+   Fonts: Bricolage Grotesque (display/UI) + JetBrains Mono (numbers).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* --- surfaces (warm cream paper) --- */
+  --bg-deep:  #ebe6d6;   /* page background, deepest */
+  --bg:       #f5f1e6;   /* app background */
+  --panel:    #ffffff;   /* cards / panels */
+  --panel-2:  #f9f6ec;   /* inset / alt panel */
+
+  /* --- ink (dark green-black text) --- */
+  --ink:      #1a2820;   /* primary text */
+  --ink-dim:  #5e6f64;   /* secondary text */
+  --ink-soft: #8b9a8f;   /* muted / captions */
+
+  /* --- lines --- */
+  --line:        #d9d2bc;
+  --line-strong: #b8af93;
+
+  /* --- teal brand ramp --- */
+  --teal-400: #2fc4a3;
+  --teal-500: #0aa386;
+  --teal-600: #008a71;
+  --teal-700: #006650;   /* primary accent */
+  --teal-900: #003328;
+
+  /* --- lime highlight (Shadowfax signature) --- */
+  --lime:        #d4d225;
+  --lime-bright: #e8e635;
+  --lime-soft:   rgba(212, 210, 37, 0.18);
+
+  /* --- semantic --- */
+  --good:  var(--teal-600);
+  --warn:  #d97706;
+  --error: #b54838;
+
+  /* --- category colors (for series / tags) --- */
+  --process-c:  #006650;
+  --dock:       #c8542a;
+  --staging:    #2e6b5e;
+  --legs-c:     #6b4d8a;
+  --fwd:        #006650;
+  --rev:        #8b6914;
+  --dsc:        #0aa386;
+  --dcfmrts:    #b8520d;
+  --volumetric: #7c6f08;
+
+  /* --- accent alias --- */
+  --accent: var(--teal-700);
+
+  /* --- shape --- */
+  --radius:    14px;
+  --radius-sm: 9px;
+  --shadow:    0 1px 2px rgba(26,40,32,.06), 0 8px 24px rgba(26,40,32,.06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* numbers, codes, metrics use the mono face */
+.mono, .metric, td.num, .kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- layout: sidebar + main ---------- */
+.app {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 20px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.main { padding: 22px 26px 48px; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: static; height: auto;
+    border-right: none; border-bottom: 1px solid var(--line);
+  }
+  .main { padding: 0 18px 40px; }
+}
+
+/* ---------- brand / logo ---------- */
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.logo-mark {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--teal-900);
+  flex: none;
+}
+.logo-mark img, .logo-mark svg { width: 100%; height: 100%; object-fit: contain; }
+.brand h1 { margin: 0; font-size: 15px; line-height: 1.25; font-weight: 700; }
+.brand-name { font-weight: 800; letter-spacing: .02em; }
+.brand .accent { color: var(--teal-700); font-weight: 800; }
+.brand .sub { display: block; font-size: 11px; color: var(--ink-soft); font-weight: 500; margin-top: 2px; }
+
+/* ---------- KPI cards ---------- */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.kpi-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.kpi-value { font-size: 26px; font-weight: 700; margin-top: 4px; color: var(--ink); }
+.kpi-delta { font-size: 12px; margin-top: 2px; }
+.kpi-delta.up   { color: var(--good); }
+.kpi-delta.down { color: var(--error); }
+
+/* ---------- panels / cards ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.panel-title { font-size: 15px; font-weight: 700; }
+.panel-desc { font-size: 12px; color: var(--ink-dim); }
+
+/* ---------- tabs ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.tab {
+  padding: 8px 14px; font-size: 13px; font-weight: 600;
+  color: var(--ink-dim); background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tab.active { color: var(--teal-700); border-bottom-color: var(--teal-700); }
+
+/* ---------- buttons ---------- */
+.btn {
+  font-family: inherit; font-weight: 600; font-size: 13px;
+  padding: 9px 16px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--teal-600); }
+.btn-primary { background: var(--teal-700); border-color: var(--teal-700); color: #fff; }
+.btn-primary:hover { background: var(--teal-600); }
+.btn-accent { background: var(--lime); border-color: var(--lime); color: var(--ink); }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--ink-soft);
+  padding: 8px 10px; border-bottom: 1px solid var(--line-strong);
+  position: sticky; top: 0; background: var(--panel);
+}
+tbody td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+tbody tr:hover { background: var(--panel-2); }
+td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+tfoot td { font-weight: 700; border-top: 2px solid var(--line-strong); background: var(--panel-2); }
+
+/* ---------- tags / chips ---------- */
+.tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--lime-soft); color: var(--teal-900);
+}
+.tag.fwd { background: color-mix(in srgb, var(--fwd) 15%, transparent); color: var(--fwd); }
+.tag.rev { background: color-mix(in srgb, var(--rev) 15%, transparent); color: var(--rev); }
+.tag.dsc { background: color-mix(in srgb, var(--dsc) 15%, transparent); color: var(--dsc); }
+.tag.dock { background: color-mix(in srgb, var(--dock) 15%, transparent); color: var(--dock); }
+
+/* ---------- form controls ---------- */
+label { font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+input[type="text"], input[type="number"], select {
+  font-family: inherit; font-size: 13px;
+  padding: 8px 10px; border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm); background: var(--panel); color: var(--ink); width: 100%;
+}
+input[type="range"] { width: 100%; accent-color: var(--teal-700); }
+
+.main{max-width:1560px;margin-inline:auto;}
+.filters label{display:block;margin:14px 0 4px;}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+@media(min-width:1180px){.kpis{grid-template-columns:repeat(6,1fr);}}
+.status-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+.scard{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--panel);box-shadow:var(--shadow);border-left:4px solid var(--line-strong);}
+.scard.high{border-left-color:var(--warn);} .scard.opt{border-left-color:var(--teal-600);} .scard.low{border-left-color:var(--error);}
+.scard .n{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;}
+.scard .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);font-weight:600;}
+.scard .s{font-size:12px;color:var(--ink-dim);margin-top:2px;}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;}
+.chip.high{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);}
+.chip.opt{background:color-mix(in srgb,var(--teal-600) 16%,transparent);color:var(--teal-700);}
+.chip.low{background:color-mix(in srgb,var(--error) 16%,transparent);color:var(--error);}
+.cb-scroll{max-height:560px;overflow:auto;padding-right:4px;}
+.cb{display:flex;flex-direction:column;gap:13px;}
+.cbrow{display:grid;grid-template-columns:180px 1fr 120px;align-items:center;gap:14px;padding-bottom:11px;border-bottom:1px solid var(--line);}
+.cbrow:last-child{border-bottom:none;}
+.cb-site{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cb-bars{display:flex;flex-direction:column;gap:6px;}
+.cb-line{display:flex;align-items:center;gap:8px;}
+.cb-bar{height:14px;border-radius:3px;min-width:2px;}
+.cb-bar.cur{background:var(--teal-700);} .cb-bar.opt{background:var(--lime);}
+.cb-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--ink);}
+.cb-tag{text-align:right;}
+.dblegend{display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:var(--ink-dim);margin-top:14px;}
+.dblegend i{display:inline-block;width:14px;height:6px;border-radius:2px;margin-right:5px;vertical-align:1px;}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;}
+.tbl-scroll{max-height:620px;overflow:auto;}
+.hint{font-size:11px;color:var(--ink-soft);margin-top:8px;}
+.red{color:var(--error);font-weight:700;}
+/* calculator */
+.verdict{padding:14px 18px;border-radius:var(--radius);font-weight:700;display:flex;align-items:center;gap:12px;margin:14px 0;border:1px solid var(--line);}
+.verdict .vt{font-family:'JetBrains Mono',monospace;font-size:18px;}
+.verdict.high{background:color-mix(in srgb,var(--warn) 12%,var(--panel));border-left:5px solid var(--warn);}
+.verdict.opt{background:color-mix(in srgb,var(--teal-600) 12%,var(--panel));border-left:5px solid var(--teal-600);}
+.verdict.low{background:color-mix(in srgb,var(--error) 12%,var(--panel));border-left:5px solid var(--error);}
+.verdict.none{background:var(--panel-2);border-left:5px solid var(--line-strong);color:var(--ink-dim);}
+.tierbadge{display:inline-block;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;padding:3px 11px;border-radius:999px;background:var(--lime-soft);color:var(--teal-800);border:1px solid var(--teal-600);}
+.cform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:8px;}
+.cform label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);font-weight:600;margin-bottom:3px;}
+.cform input,.cform select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-family:inherit;font-size:13px;}
+.pk td.num input{width:62px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;padding:4px 6px;border:1px solid var(--line);border-radius:6px;}
+.pk td .cu{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);font-weight:600;}
+.hm-ref td,.hm-ref th{text-align:center;} .hm-ref td.p,.hm-ref th.p{text-align:left;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-mark"><img src="data:image/jpeg;base64,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" alt="Shadowfax"></div>
+      <h1><span class="brand-name">SHADOWFAX</span> <span class="accent">Security</span>
+        <span class="sub">Deployment status vs optimum</span></h1>
+    </div>
+    <div class="filters">
+      <label for="f-rm">RM</label><select id="f-rm"><option value="">All RMs</option></select>
+      <label for="f-zone">Zone</label><select id="f-zone"><option value="">All zones</option></select>
+      <label for="f-cc">Facility type</label><select id="f-cc"><option value="">All (DC + XD)</option></select>
+      <label for="f-status">Status</label>
+      <select id="f-status"><option value="">All</option><option value="high">High (over)</option><option value="opt">Optimum</option><option value="low">Low (under)</option></select>
+      <label for="f-rate">Cost / guard / month (₹)</label>
+      <input type="number" id="f-rate" value="22000" step="500" style="width:100%;">
+    </div>
+    <div class="btnrow" style="margin-top:16px;">
+      <button class="btn" id="reset" style="flex:1;">Reset</button>
+      <button class="btn btn-accent" id="csv" style="flex:1;">CSV</button>
+    </div>
+    <p class="hint" id="src">Source: SG_Optimization · HC Tracker · 61 sites</p>
+  </aside>
+
+  <main class="main">
+    <div class="kpis" id="kpis"></div>
+    <div class="status-strip" id="strip"></div>
+
+    <div class="tabs">
+      <button class="tab active" data-t="status">Deployment status</button>
+      <button class="tab" data-t="ncr">NCR deployment</button>
+      <button class="tab" data-t="south">South deployment</button>
+      <button class="tab" data-t="calc">Optimum calculator</button>
+      <button class="tab" data-t="std">Standards</button>
+    </div>
+
+    <section data-tab="status">
+      <div class="panel">
+        <div class="panel-head">
+          <div><div class="panel-title">Site-wise current vs required (optimum)</div>
+            <div class="panel-desc">Latest deployed headcount against the required optimum. Sorted by deviation — over-deployed first.</div></div>
+          <button class="btn" id="toggleSites">View all sites</button>
+        </div>
+        <div class="cb-scroll"><div class="cb" id="siteBars"></div></div>
+        <div class="dblegend">
+          <span><i style="background:var(--teal-700)"></i>Current (latest)</span>
+          <span><i style="background:var(--lime)"></i>Required (optimum)</span>
+          <span style="color:var(--warn)">HIGH = over</span><span style="color:var(--error)">LOW = under</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div><div class="panel-title">Site detail</div>
+            <div class="panel-desc">Deployment verdict per site. Delta = current − required.</div></div>
+          <input type="text" id="search" placeholder="Search site…" style="max-width:220px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;">
+        </div>
+        <div class="tbl-scroll"><table id="siteTbl"></table></div>
+      </div>
+    </section>
+
+    <section data-tab="ncr" hidden>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">NCR cluster deployment · Sandeep's sites</div>
+          <div class="panel-desc">Current vs proposed (optimised) deployment by site.</div></div>
+          <div id="ncrSum" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal-700);"></div></div>
+        <div class="cb" id="ncrBars"></div>
+        <div class="dblegend"><span><i style="background:var(--teal-700)"></i>Current</span><span><i style="background:var(--lime)"></i>Proposed</span></div>
+        <table id="ncrTbl" style="margin-top:14px;"></table>
+      </div>
+    </section>
+
+    <section data-tab="south" hidden>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">South / BLR cluster deployment · Sivasankar's sites</div>
+          <div class="panel-desc">Post-wise current vs proposed across BOX1–3 (day + night).</div></div>
+          <div id="southSum" style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal-700);"></div></div>
+        <div class="cb" id="southBars"></div>
+        <div class="dblegend"><span><i style="background:var(--teal-700)"></i>Current</span><span><i style="background:var(--lime)"></i>Proposed</span></div>
+        <table id="southTbl" style="margin-top:14px;"></table>
+      </div>
+    </section>
+
+    <section data-tab="calc" hidden>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">Optimum calculator · existing or new site</div>
+          <div class="panel-desc">Pick an existing site to load its area and current headcount, or model a new one from parameters.</div></div></div>
+        <div style="max-width:360px;margin-bottom:14px;">
+          <label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);font-weight:600;margin-bottom:3px;">Load existing site</label>
+          <select id="c-site" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-family:inherit;font-size:13px;"><option value="">— New site —</option></select>
+        </div>
+        <div class="cform">
+          <div><label>Site name</label><input type="text" id="c-name" value="New site"></div>
+          <div><label>Building area (sq ft)</label><input type="number" id="c-area" value="8000" step="500"></div>
+          <div><label>Operational docks</label><input type="number" id="c-docks" value="10"></div>
+          <div><label>Shifts / day</label><input type="number" id="c-shifts" value="2" min="1"></div>
+          <div><label>Heavier shift</label><select id="c-peak"><option value="None">None</option><option value="Night">Night</option><option value="Day">Day</option></select></div>
+          <div><label>Extra guards (peak)</label><input type="number" id="c-uplift" value="0" min="0"></div>
+          <div><label>Current deployed HC</label><input type="number" id="c-current" placeholder="optional"></div>
+        </div>
+        <div class="verdict none" id="c-verdict"><span>Enter current deployed HC for a high / optimised / low verdict.</span></div>
+        <div style="margin:6px 0 4px;">Tier: <span class="tierbadge" id="c-tier"></span>
+          &nbsp; Required/shift: <b id="c-ps" class="mono"></b> &nbsp; Day: <b id="c-day" class="mono"></b> &nbsp; Night: <b id="c-night" class="mono"></b> &nbsp; <b id="c-totlab">Required total: <span id="c-total" class="mono"></span></b></div>
+        <div id="c-baseline" class="hint"></div>
+        <table class="pk" id="postTbl"></table>
+        <div id="dockWarn"></div>
+        <p class="hint">Tier by area; dock security = ⌈docks ÷ 5⌉ for SC tiers (XD/DSC cross-utilise). Counts editable. CU = cross-utilised (0), NA = not applicable.</p>
+      </div>
+    </section>
+
+    <section data-tab="std" hidden>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">Deployment standards (per shift)</div>
+          <div class="panel-desc">CU = cross-utilisation; dock security = 1 guard per 5 operational docks, rounded up.</div></div></div>
+        <table class="hm-ref" id="stdTbl"></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const RAW=[{"rm": "Shivendra Rao", "site": "Ahmedabad POPUP", "sqft": 50000.0, "docks": null, "required": 13.0, "current": 13.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Gujarat", "tier": "SC-Small"}, {"rm": "Sandeep Kumar", "site": "OneNCR DC", "sqft": 222484.0, "docks": 64.0, "required": 48.0, "current": 54.0, "delta": 6.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Haryana", "tier": "SC-Large"}, {"rm": "Injam Kishor", "site": "Guwahati DC", "sqft": 20000.0, "docks": 4.0, "required": 5.0, "current": 5.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "L&L", "state": "Assam", "tier": "DSC"}, {"rm": "Injam Kishor", "site": "Dibrugarh XDC", "sqft": 4000.0, "docks": 1.0, "required": 1.0, "current": 1.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "BIS", "state": "Assam", "tier": "XD"}, {"rm": "Injam Kishor", "site": "Silchar XD", "sqft": 3000.0, "docks": 1.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "L&L", "state": "Assam", "tier": "XD"}, {"rm": "Inder Pal Singh", "site": "LUCKNOW DC", "sqft": 155000.0, "docks": 32.0, "required": 21.0, "current": 21.0, "delta": 0.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Uttar Pradesh", "tier": "SC-Large"}, {"rm": "Inder Pal Singh", "site": "Gorakhpur XD", "sqft": 24500.0, "docks": 5.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "L&L", "state": "Uttar Pradesh", "tier": "SC-Small"}, {"rm": "Inder Pal Singh", "site": "Varanasi DC", "sqft": 17475.0, "docks": 6.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "L&L", "state": "Uttar Pradesh", "tier": "DSC"}, {"rm": "Inder Pal Singh", "site": "Kanpur DC", "sqft": 14500.0, "docks": 4.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "L&L", "state": "Uttar Pradesh", "tier": "DSC"}, {"rm": "Inder Pal Singh", "site": "Moradabad XD", "sqft": 6000.0, "docks": 2.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "L&L", "state": "Uttar Pradesh", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Aurangabad XD", "sqft": 5200.0, "docks": 2.0, "required": 2.0, "current": 4.0, "delta": 2.0, "zone": "West", "cc": "XD", "agency": "Peregrine", "state": "Maharashtra", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Akola XD", "sqft": 7992.0, "docks": 4.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "GDX", "state": "Maharashtra", "tier": "DSC"}, {"rm": "Sandeep Kumar", "site": "NCR Tauru DC", "sqft": 155000.0, "docks": 27.0, "required": 30.0, "current": 30.0, "delta": 0.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Haryana", "tier": "SC-Large"}, {"rm": "Injam Kishor", "site": "Siliguri_crossdock", "sqft": 8000.0, "docks": 3.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "BIS", "state": "West Bangal", "tier": "DSC"}, {"rm": "Sivasankar Reddy", "site": "Bangalore DC BOX1", "sqft": 164000.0, "docks": 48.0, "required": 19.0, "current": 19.0, "delta": 0.0, "zone": "South", "cc": "DC", "agency": "Peregrine", "state": "Karnataka", "tier": "SC-Large"}, {"rm": "Sivasankar Reddy", "site": "Bangalore DC BOX2", "sqft": 75000.0, "docks": null, "required": 10.0, "current": 10.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Karnataka", "tier": "SC-Medium"}, {"rm": "Sivasankar Reddy", "site": "Bangalore XD", "sqft": 123000.0, "docks": 47.0, "required": 19.0, "current": 19.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Karnataka", "tier": "SC-Medium"}, {"rm": "Injam Kishor", "site": "Ranchi XD", "sqft": 12000.0, "docks": 1.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Jharkhand", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "BHOPAL XD", "sqft": 5500.0, "docks": 10.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "GDX", "state": "Madhya Pradesh", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "INDORE XD", "sqft": 10500.0, "docks": 7.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "L&L", "state": "Madhya Pradesh", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Jabalpur XD", "sqft": 17774.0, "docks": 8.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "L&L", "state": "Madhya Pradesh", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Udaipur XD", "sqft": 6150.0, "docks": 2.0, "required": 1.0, "current": 1.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "L&L", "state": "Rajasthan", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Jodhpur XD", "sqft": 8000.0, "docks": 3.0, "required": 1.0, "current": 1.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "L&L", "state": "Rajasthan", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "RAIPUR XD", "sqft": 15000.0, "docks": 4.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Chhattisgarh", "tier": "DSC"}, {"rm": "Inder Pal Singh", "site": "JAMMU XD", "sqft": 5000.0, "docks": 2.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "BIS", "state": "J&K", "tier": "XD"}, {"rm": "Inder Pal Singh", "site": "LUDHIANA XD", "sqft": 50000.0, "docks": 16.0, "required": 8.0, "current": 16.0, "delta": 8.0, "zone": "North", "cc": "XD", "agency": "GDX", "state": "Punjab", "tier": "SC-Small"}, {"rm": "Inder Pal Singh", "site": "Chandigarh XD", "sqft": 12300.0, "docks": 3.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "GDX", "state": "Punjab", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "MUMBAI/Bhiwandi DC", "sqft": 156000.0, "docks": 16.0, "required": 28.0, "current": 28.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Maharashtra", "tier": "SC-Large"}, {"rm": "Ketan Salvi", "site": "Mumbai POPUP", "sqft": 60000.0, "docks": null, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Maharashtra", "tier": "SC-Medium"}, {"rm": "Inder Pal Singh", "site": "Patna DC", "sqft": 89000.0, "docks": 13.0, "required": 14.0, "current": 14.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "Peregrine", "state": "Bihar", "tier": "SC-Medium"}, {"rm": "Inder Pal Singh", "site": "Purnia XD", "sqft": 8000.0, "docks": 6.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "North", "cc": "XD", "agency": "GDX", "state": "Bihar", "tier": "DSC"}, {"rm": "Ketan Salvi", "site": "Pune XD", "sqft": 32775.0, "docks": 8.0, "required": 8.0, "current": 8.0, "delta": 0.0, "zone": "West", "cc": "XD", "agency": "Peregrine", "state": "Maharashtra", "tier": "SC-Small"}, {"rm": "Sivasankar Reddy", "site": "HUBLI XD", "sqft": 25000.0, "docks": 15.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Karnataka", "tier": "SC-Small"}, {"rm": "Sivasankar Reddy", "site": "CHENNAI DC", "sqft": 32000.0, "docks": 12.0, "required": 7.0, "current": 7.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "GDX", "state": "Tamilnadu", "tier": "SC-Small"}, {"rm": "Sivasankar Reddy", "site": "MADURAI DC", "sqft": 12000.0, "docks": 4.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "GDX", "state": "Tamilnadu", "tier": "DSC"}, {"rm": "Sivasankar Reddy", "site": "Trichy XD", "sqft": 20000.0, "docks": 4.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "GDX", "state": "Tamilnadu", "tier": "DSC"}, {"rm": "Sivasankar Reddy", "site": "COIMBATORE XD", "sqft": 15000.0, "docks": 4.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "GDX", "state": "Tamilnadu", "tier": "DSC"}, {"rm": "Sivasankar Reddy", "site": "Kozhikode XD", "sqft": 19500.0, "docks": 4.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Kerala", "tier": "DSC"}, {"rm": "Injam Kishor", "site": "Hyderabad DC", "sqft": 80000.0, "docks": 20.0, "required": 17.0, "current": 17.0, "delta": 0.0, "zone": "East", "cc": "DC", "agency": "Peregrine", "state": "Telangana", "tier": "SC-Medium"}, {"rm": "Injam Kishor", "site": "Hyderabad REV DC", "sqft": 52000.0, "docks": 6.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "East", "cc": "DC", "agency": "Peregrine", "state": "Telangana", "tier": "SC-Medium"}, {"rm": "Injam Kishor", "site": "BHUBNESHWAR XD", "sqft": 10000.0, "docks": 4.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Odisha", "tier": "DSC"}, {"rm": "Sandeep Kumar", "site": "NCR BAMNOLI DC Block A B & D", "sqft": 38000.0, "docks": null, "required": 40.0, "current": 40.0, "delta": 0.0, "zone": null, "cc": null, "agency": null, "state": null, "tier": "SC-Small"}, {"rm": "Sandeep Kumar", "site": "Bamnoli New DC", "sqft": 17000.0, "docks": null, "required": 8.0, "current": 8.0, "delta": 0.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Delhi", "tier": "DSC"}, {"rm": "Sivasankar Reddy", "site": "MYSORE XD", "sqft": 5800.0, "docks": 1.0, "required": 1.0, "current": 1.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Karnataka", "tier": "DSC"}, {"rm": "Injam Kishor", "site": "KOLKATA 1 DC", "sqft": 90000.0, "docks": 25.0, "required": 21.0, "current": 21.0, "delta": 0.0, "zone": null, "cc": null, "agency": null, "state": null, "tier": "SC-Medium"}, {"rm": "Injam Kishor", "site": "Kolkata 2 DC", "sqft": null, "docks": null, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "East", "cc": "DC", "agency": "L&L", "state": "West Bangal", "tier": "XD"}, {"rm": "Injam Kishor", "site": "CCU_Large DC Kolkata", "sqft": 51281.0, "docks": null, "required": 9.0, "current": 9.0, "delta": 0.0, "zone": "East", "cc": "DC", "agency": "L&L", "state": "West Bangal", "tier": "SC-Medium"}, {"rm": "Injam Kishor", "site": "Kolkata XD", "sqft": 23000.0, "docks": null, "required": 5.0, "current": 5.0, "delta": 0.0, "zone": null, "cc": null, "agency": null, "state": null, "tier": "SC-Small"}, {"rm": "Shivendra Rao", "site": "Ahmedabad DC", "sqft": 95000.0, "docks": 36.0, "required": 14.0, "current": 14.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Gujarat", "tier": "SC-Medium"}, {"rm": "Shivendra Rao", "site": "RJT_Rajkot_DC", "sqft": 35840.0, "docks": 6.0, "required": 0.0, "current": 0.0, "delta": 0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Gujarat", "tier": "SC-Small"}, {"rm": "Sandeep Kumar", "site": "Bilaspur POPUP/Two NCR DC", "sqft": 140000.0, "docks": null, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Haryana", "tier": "SC-Large"}, {"rm": "Injam Kishor", "site": "Vijayawada XD", "sqft": 22000.0, "docks": 6.0, "required": 4.0, "current": 4.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Andhra Pradesh", "tier": "SC-Small"}, {"rm": "Injam Kishor", "site": "Visakhapatanam XD", "sqft": 17600.0, "docks": 6.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Andhra Pradesh", "tier": "DSC"}, {"rm": "Injam Kishor", "site": "Rajahmundry DC", "sqft": 10000.0, "docks": 3.0, "required": 1.0, "current": 1.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "Peregrine", "state": "Andhra Pradesh", "tier": "DSC"}, {"rm": "Injam Kishor", "site": "MALDA XD", "sqft": 2500.0, "docks": 1.0, "required": 2.0, "current": 2.0, "delta": 0.0, "zone": "East", "cc": "XD", "agency": "L&L", "state": "West Bangal", "tier": "XD"}, {"rm": "Sandeep Kumar", "site": "NCR BILASPUR DC", "sqft": 126000.0, "docks": 35.0, "required": 30.0, "current": 30.0, "delta": 0.0, "zone": "North", "cc": "DC", "agency": "L&L", "state": "Haryana", "tier": "SC-Large"}, {"rm": "Sivasankar Reddy", "site": "KOCHI XD/Cochin", "sqft": 20000.0, "docks": 8.0, "required": 3.0, "current": 3.0, "delta": 0.0, "zone": "South", "cc": "XD", "agency": "Peregrine", "state": "Kerala", "tier": "DSC"}, {"rm": "Shivendra Rao", "site": "Jaipur DC New", "sqft": 79045.0, "docks": 66.0, "required": 24.0, "current": 24.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "L&L", "state": "Rajasthan", "tier": "SC-Medium"}, {"rm": "Ketan Salvi", "site": "Nagpur DC New", "sqft": 66362.0, "docks": 35.0, "required": 13.0, "current": 13.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "GDX", "state": "Maharashtra", "tier": "SC-Medium"}, {"rm": "Shivendra Rao", "site": "SURAT BTS/DC//Palsana", "sqft": 154000.0, "docks": 49.0, "required": 20.0, "current": 20.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "BIS", "state": "Gujarat", "tier": "SC-Large"}, {"rm": "Shivendra Rao", "site": "Surat REV POPUP", "sqft": 20000.0, "docks": null, "required": 14.0, "current": 14.0, "delta": 0.0, "zone": "West", "cc": "DC", "agency": "BIS", "state": "Gujarat", "tier": "DSC"}], SUMMARY={"Savings taken in target": 7720000.0, "Savings executed": 6780000.0, "Pending savings": 940000.0}, NCR=[{"site": "OneNCR", "current": 86.0, "proposed": 48.0, "reduction": 38.0}, {"site": "Bilaspur", "current": 53.0, "proposed": 30.0, "reduction": 23.0}, {"site": "Tauru", "current": 53.0, "proposed": 30.0, "reduction": 23.0}, {"site": "Bamnoli", "current": 63.0, "proposed": 52.0, "reduction": 11.0}], SOUTH=[{"post": "Human Entry gate", "current": 4.0, "proposed": 2.0, "optimized": 2.0, "remark": ""}, {"post": "Truck Entry Gate", "current": 5.0, "proposed": 4.0, "optimized": 1.0, "remark": ""}, {"post": "Truck Exit Gate", "current": 2.0, "proposed": 2.0, "optimized": 0.0, "remark": ""}, {"post": "Freshking", "current": 11.0, "proposed": 7.0, "optimized": 4.0, "remark": "Blocking the entry exit of B0X2 and use BOX-1 entry exit for movements"}, {"post": "Reception", "current": 4.0, "proposed": 3.0, "optimized": 1.0, "remark": ""}, {"post": "SS-Liquidation", "current": 1.0, "proposed": 1.0, "optimized": 0.0, "remark": ""}, {"post": "Patrolling", "current": 6.0, "proposed": 0.0, "optimized": 6.0, "remark": "Utilize BOX-1 Manpower for patrolling"}, {"post": "B2B", "current": 2.0, "proposed": 0.0, "optimized": 2.0, "remark": "Deploy 2 SGs and Change the cost center to B2B"}, {"post": "Dock", "current": 27.0, "proposed": 20.0, "optimized": 7.0, "remark": "Reduce Dock manpower and utilize Reception and Frisking for peak IB and OB hours."}, {"post": "CWC- FK & Peeko", "current": 0.0, "proposed": 0.0, "optimized": 0.0, "remark": "Move 3 HC of the cost from Ecom to special projects and deploy"}, {"post": "Supervisor", "current": 4.0, "proposed": 3.0, "optimized": 1.0, "remark": "Cross Deploy: Petroling, Dock and Entrance"}, {"post": "Yard Marshalling", "current": 4.0, "proposed": 2.0, "optimized": 2.0, "remark": ""}];
+let data=RAW.map(d=>({...d}));
+const F={rm:'',zone:'',cc:'',status:''}; let rate=22000, search='', showAll=false;
+const el=id=>document.getElementById(id);
+const fmt=x=>Math.round(x||0).toLocaleString('en-IN');
+const money=x=>'₹'+Math.round(x||0).toLocaleString('en-IN');
+const n0=x=>x==null?0:x;
+const statusOf=d=>{const g=n0(d.current)-n0(d.required);return g>0?'high':(g<0?'low':'opt');};
+const STLAB={high:'HIGH',opt:'OPTIMUM',low:'LOW'};
+
+function uniq(k){return [...new Set(RAW.map(d=>d[k]).filter(Boolean))].sort();}
+function fillSel(id,k){const s=el(id);uniq(k).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});}
+function filtered(){return data.filter(d=>(!F.rm||d.rm===F.rm)&&(!F.zone||d.zone===F.zone)&&(!F.cc||d.cc===F.cc)&&(!F.status||statusOf(d)===F.status)&&(!search||(d.site||'').toLowerCase().includes(search)));}
+function sum(a,f){return a.reduce((s,x)=>s+f(x),0);}
+
+function renderKPIs(){
+  const d=filtered();
+  const req=sum(d,x=>n0(x.required)), cur=sum(d,x=>n0(x.current)), net=cur-req;
+  const over=d.filter(x=>statusOf(x)==='high').length;
+  const K=[
+    ['Sites',fmt(d.length),''],
+    ['Required HC',fmt(req),'optimum'],
+    ['Current HC',fmt(cur),'latest'],
+    ['Net delta',(net>0?'+':'')+fmt(net),'current − required'],
+    ['Over-deployed',fmt(over)+' sites','still above optimum'],
+    ['Savings executed',money(SUMMARY['Savings executed']),'₹'+fmt(SUMMARY['Pending savings'])+' pending'],
+  ];
+  el('kpis').innerHTML=K.map(k=>`<div class="kpi"><div class="kpi-label">${k[0]}</div><div class="kpi-value">${k[1]}</div>${k[2]?`<div class="kpi-delta up">${k[2]}</div>`:''}</div>`).join('');
+}
+function renderStrip(){
+  const d=filtered();const g={high:[0,0],opt:[0,0],low:[0,0]};
+  d.forEach(x=>{const s=statusOf(x);g[s][0]++;g[s][1]+=Math.abs(n0(x.current)-n0(x.required));});
+  const defs=[['high','High (over-deployed)','heads above optimum'],['opt','At optimum','matched to required'],['low','Low (under-deployed)','heads below optimum']];
+  el('strip').innerHTML=defs.map(([k,t,s])=>`<div class="scard ${k}"><div class="l">${t}</div><div class="n">${g[k][0]} sites</div><div class="s">${fmt(g[k][1])} ${s}</div></div>`).join('');
+}
+function renderSiteBars(){
+  const d=filtered().map(x=>({...x,dl:n0(x.current)-n0(x.required)})).sort((a,b)=>b.dl-a.dl);
+  const list=showAll?d:d.slice(0,15);
+  const max=Math.max(1,...d.map(x=>Math.max(n0(x.current),n0(x.required))))*1.12;
+  el('siteBars').innerHTML=list.map(x=>{const cur=n0(x.current),req=n0(x.required),dl=cur-req,st=statusOf(x);
+    return `<div class="cbrow"><div class="cb-site" title="${x.site}">${x.site}</div>
+      <div class="cb-bars">
+        <div class="cb-line"><div class="cb-bar cur" style="width:${cur/max*100}%"></div><span class="cb-val">${fmt(cur)}</span></div>
+        <div class="cb-line"><div class="cb-bar opt" style="width:${req/max*100}%"></div><span class="cb-val">${fmt(req)}</span></div>
+      </div>
+      <div class="cb-tag"><span class="chip ${st}">${STLAB[st]}${dl>0?' +'+fmt(dl):(dl<0?' '+fmt(dl):'')}</span></div></div>`;}).join('');
+  el('toggleSites').textContent=showAll?'Show top 15':('View all '+d.length+' sites');
+}
+function renderSiteTbl(){
+  const d=filtered().slice().sort((a,b)=>(n0(b.current)-n0(b.required))-(n0(a.current)-n0(a.required)));
+  let t='<thead><tr><th>Site</th><th>RM</th><th>Zone</th><th>Type</th><th class="num">Sq Ft</th><th class="num">Docks</th><th>Tier</th><th class="num">Required</th><th class="num">Current</th><th class="num">Delta</th><th>Status</th></tr></thead><tbody>';
+  d.forEach(x=>{const st=statusOf(x),dl=n0(x.current)-n0(x.required);
+    t+=`<tr><td>${x.site}</td><td>${x.rm||''}</td><td>${x.zone||'—'}</td><td>${x.cc||'—'}</td><td class="num">${fmt(x.sqft)}</td><td class="num">${x.docks==null?'—':fmt(x.docks)}</td><td>${x.tier}</td>
+      <td class="num">${fmt(x.required)}</td><td class="num">${fmt(x.current)}</td><td class="num">${dl>0?'+'+fmt(dl):fmt(dl)}</td>
+      <td><span class="chip ${st}">${STLAB[st]}</span></td></tr>`;});
+  t+='</tbody>';el('siteTbl').innerHTML=t;
+}
+function renderStatus(){renderKPIs();renderStrip();renderSiteBars();renderSiteTbl();}
+
+/* ---- calculator ---- */
+const TIERS=['XD','DSC','SC-Small','SC-Medium','SC-Large'];
+const AREA={'XD':'Up to 5K','DSC':'5K–20K','SC-Small':'20K–50K','SC-Medium':'50K–125K','SC-Large':'Above 125K'};
+const MAXDOCK={'XD':2,'DSC':8,'SC-Small':15,'SC-Medium':30,'SC-Large':55};
+const POSTS=[
+ ['Entry gate',{XD:0,DSC:0,'SC-Small':0,'SC-Medium':1,'SC-Large':1}],
+ ['Exit gate',{XD:0,DSC:0,'SC-Small':0,'SC-Medium':'CU','SC-Large':1}],
+ ['Reception',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':'CU','SC-Large':1}],
+ ['Male frisking',{XD:1,DSC:1,'SC-Small':1,'SC-Medium':1,'SC-Large':2}],
+ ['Female frisking',{XD:0,DSC:1,'SC-Small':1,'SC-Medium':1,'SC-Large':1}],
+ ['Dock security',{XD:'CU',DSC:'CU','SC-Small':'DOCK','SC-Medium':'DOCK','SC-Large':'DOCK'}],
+ ['Yard marshal',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':1,'SC-Large':2}],
+ ['Patrolling',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':1,'SC-Large':1}],
+ ['Washroom approach',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':'CU','SC-Large':1}],
+ ['Exception/liquidation',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':0,'SC-Large':'CU'}],
+ ['B2B/superstore',{XD:'CU',DSC:'CU','SC-Small':'CU','SC-Medium':0,'SC-Large':'CU'}],
+ ['Security supervisor',{XD:'NA',DSC:'NA','SC-Small':1,'SC-Medium':1,'SC-Large':1}],
+];
+function tierOf(a){a=+a||0;if(a<=5000)return 'XD';if(a<=20000)return 'DSC';if(a<=50000)return 'SC-Small';if(a<=125000)return 'SC-Medium';return 'SC-Large';}
+function headsOf(v,d){if(v==='CU'||v==='NA')return 0;if(v==='DOCK')return Math.ceil((+d||0)/5);return +v;}
+function labelOf(v,d){if(v==='CU')return 'CU';if(v==='NA')return 'NA';if(v==='DOCK')return '⌈'+(+d||0)+'/5⌉='+Math.ceil((+d||0)/5);return String(v);}
+function stdPerShift(t,d){return POSTS.reduce((s,[p,m])=>s+headsOf(m[t],d),0);}
+let cOver={};
+function renderPosts(){
+  const area=+el('c-area').value||0,docks=+el('c-docks').value||0,tier=tierOf(area);
+  el('c-tier').textContent=tier+' · '+AREA[tier];
+  let t='<thead><tr><th>Deployment post</th><th>Standard</th><th class="num">Guards/shift</th></tr></thead><tbody>';
+  POSTS.forEach(([p,m])=>{const v=m[tier],base=headsOf(v,docks),ed=!(v==='CU'||v==='NA'),val=(p in cOver)?cOver[p]:base;
+    t+=`<tr><td>${p}</td><td><span class="cu">${labelOf(v,docks)}</span></td>`+
+      (ed?`<td class="num"><input type="number" min="0" data-post="${p}" value="${val}"></td></tr>`:`<td class="num"><span class="cu">0</span></td></tr>`);});
+  t+='</tbody>';el('postTbl').innerHTML=t;
+  el('postTbl').querySelectorAll('input[data-post]').forEach(i=>i.oninput=()=>{cOver[i.dataset.post]=+i.value||0;calcCompute();});
+  const w=docks>MAXDOCK[tier]?`<div class="hint" style="color:var(--warn);font-weight:600">Note: ${docks} docks exceeds the ${tier} typical max of ${MAXDOCK[tier]}. Tier is by area; dock security still scales with actual docks.</div>`:'';
+  el('dockWarn').innerHTML=w;calcCompute();
+}
+let curSiteReq=null;  // base-file Required HC when an existing site is loaded
+function calcCompute(){
+  const shifts=Math.max(1,+el('c-shifts').value||1),peak=el('c-peak').value,uplift=Math.max(0,+el('c-uplift').value||0);
+  const cur=el('c-current').value===''?null:+el('c-current').value;
+  let ps=0;el('postTbl').querySelectorAll('input[data-post]').forEach(i=>ps+=(+i.value||0));
+  let day=ps,night=shifts>=2?ps:null,total;
+  if(shifts>=2&&peak!=='None'){const h=ps+uplift;if(peak==='Day')day=h;else night=h;total=day+night+(shifts-2)*ps;}else total=ps*shifts;
+  el('c-ps').textContent=fmt(ps);el('c-day').textContent=fmt(day);el('c-night').textContent=night==null?'—':fmt(night);el('c-total').textContent=fmt(total);
+  // choose the optimum the verdict is measured against: file Required for an existing site, else the parameter estimate
+  const opt = curSiteReq!=null ? curSiteReq : total;
+  el('c-totlab').innerHTML = curSiteReq!=null
+    ? 'Parameter estimate: <span id="c-total" class="mono">'+fmt(total)+'</span>'
+    : 'Required total: <span id="c-total" class="mono">'+fmt(total)+'</span>';
+  el('c-baseline').innerHTML = curSiteReq!=null
+    ? 'Required (base file): <b class="mono" style="color:var(--teal-700)">'+fmt(curSiteReq)+'</b> — verdict uses this. Add docks to refine the parameter estimate.'
+    : '';
+  const v=el('c-verdict');
+  if(cur==null){v.className='verdict none';v.innerHTML='<span>Enter current deployed HC for a high / optimised / low verdict.</span>';return;}
+  const dl=cur-opt,r=+el('f-rate').value||0;
+  if(dl>0){v.className='verdict high';v.innerHTML=`<span class="vt">HIGH · +${fmt(dl)}</span><span>Over-deployed — ${fmt(cur)} vs required ${fmt(opt)}. Reduce ${fmt(dl)} (~${money(dl*r)}/mo).</span>`;}
+  else if(dl<0){v.className='verdict low';v.innerHTML=`<span class="vt">LOW · ${fmt(dl)}</span><span>Under-deployed — ${fmt(cur)} vs required ${fmt(opt)}. Short ${fmt(-dl)}.</span>`;}
+  else{v.className='verdict opt';v.innerHTML=`<span class="vt">OPTIMUM</span><span>Matches required ${fmt(opt)}.</span>`;}
+}
+function fillSitePicker(){const s=el('c-site');data.slice().sort((a,b)=>(a.site||'').localeCompare(b.site||'')).forEach(r=>{const o=document.createElement('option');o.value=r.site;o.textContent=r.site;s.appendChild(o);});}
+el('c-site').onchange=e=>{const r=data.find(x=>x.site===e.target.value);
+  if(r){el('c-name').value=r.site;el('c-area').value=r.sqft||0;el('c-docks').value=r.docks==null?0:r.docks;el('c-current').value=r.current==null?'':r.current;curSiteReq=r.required;}
+  else{curSiteReq=null;}
+  cOver={};renderPosts();};
+function renderStd(){
+  let t='<thead><tr><th class="p">Post</th>'+TIERS.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+  t+='<tr><td class="p">Building area</td>'+TIERS.map(x=>`<td>${AREA[x]}</td>`).join('')+'</tr>';
+  t+='<tr><td class="p">Max docks</td>'+TIERS.map(x=>`<td>${MAXDOCK[x]}</td>`).join('')+'</tr>';
+  POSTS.forEach(([p,m])=>{t+=`<tr><td class="p">${p}</td>`+TIERS.map(x=>{const v=m[x];return `<td>${v==='DOCK'?'⌈docks/5⌉':v}</td>`;}).join('')+'</tr>';});
+  t+='<tr style="font-weight:700;background:var(--panel-2)"><td class="p">Total/shift (at max docks)</td>'+TIERS.map(x=>`<td>${fmt(stdPerShift(x,MAXDOCK[x]))}</td>`).join('')+'</tr></tbody>';
+  el('stdTbl').innerHTML=t;
+}
+
+function clusterBars(elId,arr,key){
+  const max=Math.max(1,...arr.map(x=>Math.max(n0(x.current),n0(x[key]))))*1.12;
+  el(elId).innerHTML=arr.map(x=>{const cur=n0(x.current),pr=n0(x[key]),red=cur-pr;
+    return `<div class="cbrow"><div class="cb-site" title="${x.label}">${x.label}</div>
+      <div class="cb-bars">
+        <div class="cb-line"><div class="cb-bar cur" style="width:${cur/max*100}%"></div><span class="cb-val">${fmt(cur)}</span></div>
+        <div class="cb-line"><div class="cb-bar opt" style="width:${pr/max*100}%"></div><span class="cb-val">${fmt(pr)}</span></div>
+      </div>
+      <div class="cb-tag">${red>0?`<span class="chip high">▼ ${fmt(red)}</span>`:(red<0?`<span class="chip low">+${fmt(-red)}</span>`:`<span class="chip opt">0</span>`)}</div></div>`;}).join('');
+}
+function renderNCR(){
+  const arr=NCR.map(x=>({label:x.site,current:x.current,proposed:x.proposed})).sort((a,b)=>(b.current-b.proposed)-(a.current-a.proposed));
+  const c=sum(NCR,x=>n0(x.current)),p=sum(NCR,x=>n0(x.proposed)),r=c-p;
+  el('ncrSum').textContent=`Current ${fmt(c)} → Proposed ${fmt(p)} · ▼ ${fmt(r)} (${Math.round(r/c*100)}%)`;
+  clusterBars('ncrBars',arr,'proposed');
+  let t='<thead><tr><th>Site</th><th class="num">Current</th><th class="num">Proposed</th><th class="num">Reduction</th></tr></thead><tbody>';
+  NCR.forEach(x=>{t+=`<tr><td>${x.site}</td><td class="num">${fmt(x.current)}</td><td class="num">${fmt(x.proposed)}</td><td class="num">${fmt(n0(x.current)-n0(x.proposed))}</td></tr>`;});
+  t+=`</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(c)}</td><td class="num">${fmt(p)}</td><td class="num">${fmt(r)}</td></tr></tfoot>`;
+  el('ncrTbl').innerHTML=t;
+}
+function renderSouth(){
+  const arr=SOUTH.filter(x=>n0(x.current)||n0(x.proposed)).map(x=>({label:x.post,current:x.current,proposed:x.proposed})).sort((a,b)=>(b.current-b.proposed)-(a.current-a.proposed));
+  const c=sum(SOUTH,x=>n0(x.current)),p=sum(SOUTH,x=>n0(x.proposed)),o=sum(SOUTH,x=>n0(x.optimized));
+  el('southSum').textContent=`Current ${fmt(c)} → Proposed ${fmt(p)} · Optimised ${fmt(o)}`;
+  clusterBars('southBars',arr,'proposed');
+  let t='<thead><tr><th>Post</th><th class="num">Current</th><th class="num">Proposed</th><th class="num">Optimised</th><th>Remarks</th></tr></thead><tbody>';
+  SOUTH.forEach(x=>{t+=`<tr><td>${x.post}</td><td class="num">${fmt(x.current)}</td><td class="num">${fmt(x.proposed)}</td><td class="num">${fmt(x.optimized)}</td><td style="font-size:12px;color:var(--ink-dim)">${x.remark||''}</td></tr>`;});
+  t+=`</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(c)}</td><td class="num">${fmt(p)}</td><td class="num">${fmt(o)}</td><td></td></tr></tfoot>`;
+  el('southTbl').innerHTML=t;
+}
+
+/* events */
+const bind=(id,k)=>el(id).onchange=e=>{F[k]=e.target.value;renderStatus();};
+bind('f-rm','rm');bind('f-zone','zone');bind('f-cc','cc');bind('f-status','status');
+el('f-rate').oninput=e=>{rate=+e.target.value||0;renderKPIs();calcCompute();};
+el('search').oninput=e=>{search=e.target.value.toLowerCase();renderSiteTbl();};
+el('toggleSites').onclick=()=>{showAll=!showAll;renderSiteBars();};
+el('reset').onclick=()=>{Object.keys(F).forEach(k=>F[k]='');search='';['f-rm','f-zone','f-cc','f-status'].forEach(i=>el(i).value='');el('search').value='';renderStatus();};
+el('csv').onclick=()=>{const d=filtered();const head=['Site','RM','Zone','Type','SqFt','Tier','Required','Current','Delta','Status'];
+  const rows=d.map(x=>[x.site,x.rm,x.zone,x.cc,x.sqft,x.tier,x.required,x.current,n0(x.current)-n0(x.required),STLAB[statusOf(x)]]);
+  const csv=head.join(',')+'\n'+rows.map(r=>r.map(v=>JSON.stringify(v==null?'':v)).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='sg_status.csv';a.click();};
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('section[data-tab]').forEach(s=>s.hidden=s.dataset.tab!==b.dataset.t);});
+['c-name','c-shifts','c-peak','c-uplift','c-current'].forEach(id=>{el(id).oninput=calcCompute;el(id).onchange=calcCompute;});
+['c-area','c-docks'].forEach(id=>el(id).oninput=()=>{cOver={};renderPosts();});
+
+fillSel('f-rm','rm');fillSel('f-zone','zone');fillSel('f-cc','cc');fillSitePicker();
+renderStatus();renderNCR();renderSouth();renderPosts();renderStd();
+</script>
+</body>
+</html>
